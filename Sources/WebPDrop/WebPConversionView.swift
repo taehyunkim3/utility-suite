@@ -23,7 +23,7 @@ struct WebPConversionView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("WebP Drop")
+            Text("Utility Suite")
                 .font(.system(size: 30, weight: .bold, design: .rounded))
             Text("드래그앤드롭으로 여러 이미지를 한 번에 WebP로 변환합니다.")
                 .foregroundStyle(.secondary)

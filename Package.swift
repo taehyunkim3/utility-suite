@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "webp-app",
+    name: "utility-suite",
     platforms: [
         .macOS(.v13),
     ],

@@ -3,7 +3,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-APP_NAME="WebPDrop"
+PRODUCT_NAME="WebPDrop"
+APP_NAME="Utility Suite"
 BUILD_DIR="$ROOT_DIR/.build/release"
 DIST_DIR="$ROOT_DIR/dist"
 APP_DIR="$DIST_DIR/$APP_NAME.app"
@@ -11,10 +12,10 @@ CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 
 cd "$ROOT_DIR"
-swift build -c release --product "$APP_NAME"
+swift build -c release --product "$PRODUCT_NAME"
 
 mkdir -p "$MACOS_DIR"
-cp "$BUILD_DIR/$APP_NAME" "$MACOS_DIR/$APP_NAME"
+cp "$BUILD_DIR/$PRODUCT_NAME" "$MACOS_DIR/$PRODUCT_NAME"
 
 cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -26,11 +27,13 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
     <key>CFBundleExecutable</key>
     <string>WebPDrop</string>
     <key>CFBundleIdentifier</key>
-    <string>local.codex.WebPDrop</string>
+    <string>com.taehyunkim.UtilitySuite</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>WebPDrop</string>
+    <string>Utility Suite</string>
+    <key>CFBundleDisplayName</key>
+    <string>Utility Suite</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

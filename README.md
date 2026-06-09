@@ -1,4 +1,4 @@
-# WebPDrop
+# Utility Suite
 
 macOS에서 이미지 WebP 변환, 영상/음성 파일의 음원 추출, PDF 페이지 이미지 추출을 처리하는 작은 데스크톱 앱입니다.
 
@@ -16,7 +16,7 @@ swift run WebPDrop
 
 ## 앱 패키징
 
-아래 명령을 실행하면 `dist/WebPDrop.app`이 만들어집니다.
+아래 명령을 실행하면 `dist/Utility Suite.app`이 만들어집니다.
 
 ```zsh
 ./scripts/package-app.sh
@@ -27,13 +27,13 @@ swift run WebPDrop
 앱 번들을 만든 뒤 아래 명령으로 zip 파일을 생성합니다.
 
 ```zsh
-ditto -c -k --keepParent dist/WebPDrop.app dist/WebPDrop.zip
+ditto -c -k --keepParent "dist/Utility Suite.app" dist/UtilitySuite.zip
 ```
 
 생성된 파일:
 
 ```text
-dist/WebPDrop.zip
+dist/UtilitySuite.zip
 ```
 
 이 zip 파일을 다른 사람에게 전달하면 됩니다.
@@ -44,15 +44,15 @@ dist/WebPDrop.zip
 
 받는 사람은 보통 아래 순서로 실행할 수 있습니다.
 
-1. `WebPDrop.zip` 압축을 풉니다.
-2. `WebPDrop.app`을 `Applications` 폴더로 옮깁니다.
+1. `UtilitySuite.zip` 압축을 풉니다.
+2. `Utility Suite.app`을 `Applications` 폴더로 옮깁니다.
 3. 앱을 더블클릭하지 말고, 우클릭 또는 Control-클릭 후 `열기`를 선택합니다.
 4. macOS 보안 경고에서 다시 `열기`를 선택합니다.
 
 그래도 실행이 막히면 터미널에서 아래 명령을 실행합니다.
 
 ```zsh
-xattr -dr com.apple.quarantine /Applications/WebPDrop.app
+xattr -dr com.apple.quarantine "/Applications/Utility Suite.app"
 ```
 
 ## 정식 배포
@@ -64,15 +64,15 @@ xattr -dr com.apple.quarantine /Applications/WebPDrop.app
 ```zsh
 codesign --force --deep --options runtime --timestamp \
   --sign "Developer ID Application: 이름 (TEAMID)" \
-  dist/WebPDrop.app
+  "dist/Utility Suite.app"
 
-ditto -c -k --keepParent dist/WebPDrop.app dist/WebPDrop.zip
+ditto -c -k --keepParent "dist/Utility Suite.app" dist/UtilitySuite.zip
 
-xcrun notarytool submit dist/WebPDrop.zip \
+xcrun notarytool submit dist/UtilitySuite.zip \
   --apple-id "애플ID" \
   --team-id "TEAMID" \
   --password "앱 전용 비밀번호" \
   --wait
 
-xcrun stapler staple dist/WebPDrop.app
+xcrun stapler staple "dist/Utility Suite.app"
 ```
