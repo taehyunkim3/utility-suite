@@ -84,6 +84,66 @@ import UniformTypeIdentifiers
     #expect(flac.ffmpegAudioArguments() == ["-c:a", "flac"])
 }
 
+@Test func pdfDestinationURLPadsPageNumber() throws {
+    let extractor = PDFImageExtractor()
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let source = directory.appendingPathComponent("report.pdf")
+
+    let first = extractor.makeDestinationURL(for: source, pageNumber: 1, pageCount: 9, format: .png, outputDirectory: directory)
+    #expect(first.lastPathComponent == "report-01.png")
+
+    let large = extractor.makeDestinationURL(for: source, pageNumber: 7, pageCount: 120, format: .jpeg, outputDirectory: directory)
+    #expect(large.lastPathComponent == "report-007.jpg")
+}
+
+@Test func pdfExtractorRecognizesSupportedTypes() {
+    let extractor = PDFImageExtractor()
+    #expect(extractor.canExtract(URL(fileURLWithPath: "/tmp/file.pdf")))
+    #expect(extractor.canExtract(URL(fileURLWithPath: "/tmp/file.PDF")))
+    #expect(!extractor.canExtract(URL(fileURLWithPath: "/tmp/file.png")))
+}
+
+@Test func pdfExtractionProducesOneImagePerPage() throws {
+    let extractor = PDFImageExtractor()
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let source = directory.appendingPathComponent("multipage.pdf")
+    try writeTestPDF(to: source, pageCount: 3)
+
+    let result = try extractor.extract(
+        sourceURL: source,
+        options: PDFImageExtractionOptions(format: .png, dpi: 72),
+        outputDirectory: directory
+    )
+
+    #expect(result.pageCount == 3)
+    for url in result.outputURLs {
+        #expect(url.pathExtension == "png")
+        #expect(FileManager.default.fileExists(atPath: url.path))
+    }
+}
+
+private func writeTestPDF(to url: URL, pageCount: Int) throws {
+    var mediaBox = CGRect(x: 0, y: 0, width: 200, height: 280)
+
+    guard let context = CGContext(url as CFURL, mediaBox: &mediaBox, nil) else {
+        throw TestImageError.contextCreationFailed
+    }
+
+    for index in 0..<pageCount {
+        context.beginPDFPage(nil)
+        let shade = CGFloat(index + 1) / CGFloat(pageCount + 1)
+        context.setFillColor(red: shade, green: 0.4, blue: 0.7, alpha: 1)
+        context.fill(mediaBox)
+        context.endPDFPage()
+    }
+
+    context.closePDF()
+}
+
 private func writeTestPNG(to url: URL) throws {
     let colorSpace = CGColorSpaceCreateDeviceRGB()
     let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
