@@ -1,0 +1,10 @@
+.DS_Store
+/.build
+/Packages
+# 빌드된 앱 실행 바이너리는 추적하지 않음 (Info.plist 등 메타데이터만 추적)
+dist/WebPDrop.app/Contents/MacOS/
+xcuserdata/
+DerivedData/
+.swiftpm/configuration/registries.json
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+.netrc
