@@ -11,7 +11,7 @@ struct PDFExtractionView: View {
                 isTargeted: $viewModel.isDropTargeted,
                 iconName: "doc.richtext",
                 title: "PDF 파일을 여기로 드래그하거나 클릭하세요",
-                subtitle: "각 페이지를 PNG·JPEG 이미지로 저장합니다",
+                subtitle: "각 페이지를 PNG·JPEG·WebP 이미지로 저장합니다",
                 onTap: { viewModel.chooseFiles() },
                 onDropURLs: { viewModel.addFiles(urls: $0) }
             )
@@ -62,9 +62,9 @@ struct PDFExtractionView: View {
                         HStack(spacing: 8) {
                             Text("품질")
                                 .font(.subheadline)
-                            Slider(value: $viewModel.jpegQuality, in: 0...1)
+                            Slider(value: $viewModel.imageQuality, in: 0...1)
                                 .frame(maxWidth: 140)
-                            Text("\(viewModel.jpegQualityPercentage)")
+                            Text("\(viewModel.imageQualityPercentage)")
                                 .monospacedDigit()
                                 .foregroundStyle(.secondary)
                         }

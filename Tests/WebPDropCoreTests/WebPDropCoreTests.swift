@@ -96,6 +96,9 @@ import UniformTypeIdentifiers
 
     let large = extractor.makeDestinationURL(for: source, pageNumber: 7, pageCount: 120, format: .jpeg, outputDirectory: directory)
     #expect(large.lastPathComponent == "report-007.jpg")
+
+    let webp = extractor.makeDestinationURL(for: source, pageNumber: 3, pageCount: 12, format: .webp, outputDirectory: directory)
+    #expect(webp.lastPathComponent == "report-03.webp")
 }
 
 @Test func pdfExtractorRecognizesSupportedTypes() {
@@ -122,6 +125,27 @@ import UniformTypeIdentifiers
     #expect(result.pageCount == 3)
     for url in result.outputURLs {
         #expect(url.pathExtension == "png")
+        #expect(FileManager.default.fileExists(atPath: url.path))
+    }
+}
+
+@Test func pdfExtractionProducesWebPImages() throws {
+    let extractor = PDFImageExtractor()
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let source = directory.appendingPathComponent("webp-pages.pdf")
+    try writeTestPDF(to: source, pageCount: 2)
+
+    let result = try extractor.extract(
+        sourceURL: source,
+        options: PDFImageExtractionOptions(format: .webp, dpi: 72, quality: 0.7),
+        outputDirectory: directory
+    )
+
+    #expect(result.pageCount == 2)
+    for url in result.outputURLs {
+        #expect(url.pathExtension == "webp")
         #expect(FileManager.default.fileExists(atPath: url.path))
     }
 }

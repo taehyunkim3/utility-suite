@@ -3,6 +3,7 @@ import Foundation
 public enum PDFImageFormat: String, Sendable, CaseIterable, Identifiable {
     case png
     case jpeg
+    case webp
 
     public var id: String { rawValue }
 
@@ -12,6 +13,8 @@ public enum PDFImageFormat: String, Sendable, CaseIterable, Identifiable {
             return "png"
         case .jpeg:
             return "jpg"
+        case .webp:
+            return "webp"
         }
     }
 
@@ -21,11 +24,13 @@ public enum PDFImageFormat: String, Sendable, CaseIterable, Identifiable {
             return "PNG (무손실)"
         case .jpeg:
             return "JPEG"
+        case .webp:
+            return "WebP"
         }
     }
 
     public var supportsQuality: Bool {
-        self == .jpeg
+        self == .jpeg || self == .webp
     }
 }
 
@@ -34,12 +39,16 @@ public struct PDFImageExtractionOptions: Sendable, Equatable {
 
     public var format: PDFImageFormat
     public var dpi: Int
-    public var jpegQuality: Double
+    public var quality: Double
 
-    public init(format: PDFImageFormat = .png, dpi: Int = 150, jpegQuality: Double = 0.85) {
+    public init(format: PDFImageFormat = .png, dpi: Int = 150, quality: Double = 0.85) {
         self.format = format
         self.dpi = min(max(dpi, 36), 1200)
-        self.jpegQuality = min(max(jpegQuality, 0), 1)
+        self.quality = min(max(quality, 0), 1)
+    }
+
+    public init(format: PDFImageFormat = .png, dpi: Int = 150, jpegQuality: Double) {
+        self.init(format: format, dpi: dpi, quality: jpegQuality)
     }
 
     /// 렌더링 배율 (72 DPI 기준).
@@ -47,7 +56,11 @@ public struct PDFImageExtractionOptions: Sendable, Equatable {
         Double(dpi) / 72.0
     }
 
+    public var qualityPercentage: Int {
+        Int((quality * 100).rounded())
+    }
+
     public var jpegQualityPercentage: Int {
-        Int((jpegQuality * 100).rounded())
+        qualityPercentage
     }
 }

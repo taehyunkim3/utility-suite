@@ -33,7 +33,7 @@ final class PDFExtractionViewModel: ObservableObject {
     }
     @Published var outputFormat: PDFImageFormat = .png
     @Published var dpi: Int = 150
-    @Published var jpegQuality: Double = 0.85
+    @Published var imageQuality: Double = 0.85
     @Published var destinationMode: DestinationMode = .sameFolder {
         didSet { refreshActionState() }
     }
@@ -61,8 +61,8 @@ final class PDFExtractionViewModel: ObservableObject {
         PDFImageExtractionOptions.availableDPIs
     }
 
-    var jpegQualityPercentage: Int {
-        Int((jpegQuality * 100).rounded())
+    var imageQualityPercentage: Int {
+        Int((imageQuality * 100).rounded())
     }
 
     var selectedCountLabel: String {
@@ -207,7 +207,7 @@ final class PDFExtractionViewModel: ObservableObject {
         let options = PDFImageExtractionOptions(
             format: outputFormat,
             dpi: dpi,
-            jpegQuality: jpegQuality
+            quality: imageQuality
         )
         let outputDirectory = outputDirectory
 
