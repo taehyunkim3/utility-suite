@@ -64,6 +64,10 @@ public struct WebPConverter {
             return URL(fileURLWithPath: override)
         }
 
+        for url in Self.bundledExecutableCandidates() where FileManager.default.isExecutableFile(atPath: url.path) {
+            return url
+        }
+
         for path in Self.defaultExecutableCandidates where FileManager.default.isExecutableFile(atPath: path) {
             return URL(fileURLWithPath: path)
         }
@@ -194,6 +198,23 @@ public struct WebPConverter {
         }
 
         return nil
+    }
+
+    private static func bundledExecutableCandidates() -> [URL] {
+        var candidates: [URL] = []
+
+        if let resourceURL = Bundle.main.resourceURL {
+            candidates.append(resourceURL.appendingPathComponent("bin/cwebp"))
+        }
+
+        candidates.append(Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/bin/cwebp"))
+
+        if let executablePath = Bundle.main.executablePath {
+            let executableDirectory = URL(fileURLWithPath: executablePath).deletingLastPathComponent()
+            candidates.append(executableDirectory.appendingPathComponent("../Resources/bin/cwebp").standardizedFileURL)
+        }
+
+        return candidates
     }
 
     private func runCWebP(
