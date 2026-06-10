@@ -4,12 +4,14 @@ struct ContentView: View {
     @StateObject private var conversionViewModel = ConversionViewModel()
     @StateObject private var audioViewModel = AudioExtractionViewModel()
     @StateObject private var pdfViewModel = PDFExtractionViewModel()
+    @StateObject private var fileRenameViewModel = FileRenameViewModel()
     @State private var selectedTab: Tab = .webp
 
     enum Tab: Hashable {
         case webp
         case audio
         case pdf
+        case rename
     }
 
     var body: some View {
@@ -31,9 +33,15 @@ struct ContentView: View {
                     Label("PDF → 이미지", systemImage: "doc.richtext")
                 }
                 .tag(Tab.pdf)
+
+            FileRenameView(viewModel: fileRenameViewModel)
+                .tabItem {
+                    Label("파일명 정리", systemImage: "text.badge.plus")
+                }
+                .tag(Tab.rename)
         }
         .padding(20)
-        .frame(minWidth: 780, minHeight: 720)
+        .frame(minWidth: 860, minHeight: 780)
         .background(Color(nsColor: .windowBackgroundColor))
     }
 }

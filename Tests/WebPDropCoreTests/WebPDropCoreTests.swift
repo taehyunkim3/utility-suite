@@ -150,6 +150,74 @@ import UniformTypeIdentifiers
     }
 }
 
+@Test func fileRenamerBuildsNameWithPrefixSuffixAndSequence() throws {
+    let renamer = FileRenamer()
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let source = directory.appendingPathComponent("sample image.png")
+    FileManager.default.createFile(atPath: source.path, contents: Data(), attributes: nil)
+
+    let options = FileRenameOptions(
+        prefix: "new-",
+        suffix: "-done",
+        includeOriginalName: true,
+        includeSequence: true,
+        sequenceStart: 7,
+        sequenceDigits: 4,
+        sequenceSeparator: "_",
+        sequencePlacement: .afterName,
+        operation: .createCopy
+    )
+
+    let destination = try renamer.makeDestinationURL(for: source, itemIndex: 2, options: options)
+    #expect(destination.lastPathComponent == "new-sample image_0009-done.png")
+}
+
+@Test func fileRenamerCanCreateCopyWithoutOriginalName() throws {
+    let renamer = FileRenamer()
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let source = directory.appendingPathComponent("original.txt")
+    try "hello".write(to: source, atomically: true, encoding: .utf8)
+
+    let options = FileRenameOptions(
+        prefix: "asset-",
+        includeOriginalName: false,
+        includeSequence: true,
+        sequenceStart: 1,
+        sequenceDigits: 2,
+        operation: .createCopy
+    )
+
+    let result = try renamer.rename(sourceURL: source, itemIndex: 0, options: options)
+
+    #expect(result.destinationURL.lastPathComponent == "asset-01.txt")
+    #expect(FileManager.default.fileExists(atPath: source.path))
+    #expect(FileManager.default.fileExists(atPath: result.destinationURL.path))
+}
+
+@Test func fileRenamerCanRenameOriginal() throws {
+    let renamer = FileRenamer()
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let source = directory.appendingPathComponent("draft.md")
+    try "hello".write(to: source, atomically: true, encoding: .utf8)
+
+    let options = FileRenameOptions(
+        suffix: "-final",
+        operation: .renameOriginal
+    )
+
+    let result = try renamer.rename(sourceURL: source, itemIndex: 0, options: options)
+
+    #expect(result.destinationURL.lastPathComponent == "draft-final.md")
+    #expect(!FileManager.default.fileExists(atPath: source.path))
+    #expect(FileManager.default.fileExists(atPath: result.destinationURL.path))
+}
+
 private func writeTestPDF(to url: URL, pageCount: Int) throws {
     var mediaBox = CGRect(x: 0, y: 0, width: 200, height: 280)
 
