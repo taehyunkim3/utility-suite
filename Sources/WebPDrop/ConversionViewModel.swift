@@ -38,11 +38,12 @@ final class ConversionViewModel: ObservableObject {
     @Published var customOutputFolder: URL? {
         didSet { refreshActionState() }
     }
+    @Published var deleteOriginalFiles = false
     @Published var isDropTargeted = false
     @Published var isConverting = false {
         didSet { refreshActionState() }
     }
-    @Published var progressMessage = "PNG, JPEG, JPG 파일을 드롭하거나 선택하세요."
+    @Published var progressMessage = "PNG, JPEG, JPG 파일이나 폴더를 드롭하거나 선택하세요."
     @Published var lastReport: BatchConversionReport?
     @Published private(set) var completedSourcePaths: Set<String> = []
     @Published private(set) var failedReasonsBySourcePath: [String: String] = [:]
@@ -102,9 +103,7 @@ final class ConversionViewModel: ObservableObject {
     }
 
     func addFiles(urls: [URL]) {
-        let filtered = urls
-            .filter { converter.canConvert($0) }
-            .map(Item.init(url:))
+        let filtered = converter.convertibleFiles(from: urls).map(Item.init(url:))
 
         let existing = Set(items)
         let newItems = filtered.filter { !existing.contains($0) }
@@ -120,7 +119,7 @@ final class ConversionViewModel: ObservableObject {
         if newItems.isEmpty {
             progressMessage = "추가할 수 있는 PNG/JPEG/JPG 파일이 없습니다."
         } else {
-            progressMessage = "\(newItems.count)개 파일을 추가했습니다."
+            progressMessage = "\(newItems.count)개 변환 대상 파일을 추가했습니다."
         }
     }
 
@@ -155,8 +154,7 @@ final class ConversionViewModel: ObservableObject {
     func chooseFiles() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.allowedContentTypes = [.png, .jpeg]
+        panel.canChooseDirectories = true
         panel.prompt = "추가"
 
         guard panel.runModal() == .OK else {
@@ -201,7 +199,7 @@ final class ConversionViewModel: ObservableObject {
         progressMessage = "변환 중..."
 
         let sourceURLs = items.map(\.url)
-        let options = WebPConversionOptions(quality: quality)
+        let options = WebPConversionOptions(quality: quality, deleteOriginalFile: deleteOriginalFiles)
         let outputDirectory = outputDirectory
 
         let report = await Task.detached(priority: .userInitiated) {

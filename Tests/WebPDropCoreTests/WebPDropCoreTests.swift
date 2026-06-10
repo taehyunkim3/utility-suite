@@ -42,6 +42,45 @@ import UniformTypeIdentifiers
     #expect(result.convertedFileSize != nil)
 }
 
+@Test func converterFindsSupportedImagesInsideFolders() throws {
+    let converter = WebPConverter()
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let nested = directory.appendingPathComponent("nested")
+    try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+
+    let rootImage = directory.appendingPathComponent("root.png")
+    let nestedImage = nested.appendingPathComponent("nested.JPG")
+    let unsupported = nested.appendingPathComponent("notes.txt")
+    FileManager.default.createFile(atPath: rootImage.path, contents: Data(), attributes: nil)
+    FileManager.default.createFile(atPath: nestedImage.path, contents: Data(), attributes: nil)
+    FileManager.default.createFile(atPath: unsupported.path, contents: Data(), attributes: nil)
+
+    let files = converter.convertibleFiles(from: [directory])
+
+    #expect(Set(files.map(\.lastPathComponent)) == Set(["root.png", "nested.JPG"]))
+    #expect(files.count == 2)
+}
+
+@Test func convertPNGIntoWebPAndDeletesOriginalWhenRequested() throws {
+    let converter = WebPConverter()
+    #expect(converter.isEncodingAvailable)
+
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+    let source = directory.appendingPathComponent("delete-me.png")
+    try writeTestPNG(to: source)
+
+    let result = try converter.convert(
+        sourceURL: source,
+        options: WebPConversionOptions(qualityPercentage: 75, deleteOriginalFile: true),
+        outputDirectory: directory
+    )
+
+    #expect(FileManager.default.fileExists(atPath: result.destinationURL.path))
+    #expect(!FileManager.default.fileExists(atPath: source.path))
+}
+
 @Test func audioDestinationURLUsesFormatExtension() throws {
     let extractor = AudioExtractor()
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

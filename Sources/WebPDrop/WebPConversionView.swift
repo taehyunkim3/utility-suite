@@ -9,8 +9,8 @@ struct WebPConversionView: View {
             MediaDropZone(
                 isTargeted: $viewModel.isDropTargeted,
                 iconName: "tray.and.arrow.down.fill",
-                title: "이미지를 여기로 드래그하거나 클릭하세요",
-                subtitle: "PNG, JPG, JPEG 파일 지원",
+                title: "이미지나 폴더를 여기로 드래그하거나 클릭하세요",
+                subtitle: "PNG, JPG, JPEG 파일과 하위 폴더 지원",
                 onTap: { viewModel.chooseFiles() },
                 onDropURLs: { viewModel.addFiles(urls: $0) }
             )
@@ -25,7 +25,7 @@ struct WebPConversionView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Utility Suite")
                 .font(.system(size: 30, weight: .bold, design: .rounded))
-            Text("드래그앤드롭으로 여러 이미지를 한 번에 WebP로 변환합니다.")
+            Text("드래그앤드롭으로 이미지와 폴더 안의 파일을 한 번에 WebP로 변환합니다.")
                 .foregroundStyle(.secondary)
 
             if !viewModel.encodingAvailable {
@@ -78,6 +78,21 @@ struct WebPConversionView: View {
                         }
                     }
                 }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("원본 처리")
+                        .font(.headline)
+
+                    Toggle("변환 성공 시 원본 파일 삭제", isOn: $viewModel.deleteOriginalFiles)
+                        .disabled(viewModel.isConverting)
+
+                    Text("삭제는 성공한 파일에만 적용됩니다.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: 220)
             }
 
             HStack(spacing: 10) {

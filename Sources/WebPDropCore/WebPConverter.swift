@@ -34,6 +34,7 @@ public enum WebPConverterError: LocalizedError, Equatable {
     case encoderUnavailable
     case unsupportedFileType(URL)
     case processExecutionFailed(URL, message: String)
+    case sourceDeletionFailed(URL, message: String)
 
     public var errorDescription: String? {
         switch self {
@@ -43,6 +44,8 @@ public enum WebPConverterError: LocalizedError, Equatable {
             return "Unsupported file type: \(url.lastPathComponent)"
         case let .processExecutionFailed(url, message):
             return "cwebp failed for \(url.lastPathComponent): \(message)"
+        case let .sourceDeletionFailed(url, message):
+            return "Converted \(url.lastPathComponent), but failed to delete the original: \(message)"
         }
     }
 }
@@ -87,6 +90,30 @@ public struct WebPConverter {
         Self.supportedExtensions.contains(url.pathExtension.lowercased())
     }
 
+    public func convertibleFiles(
+        from urls: [URL],
+        fileManager: FileManager = .default
+    ) -> [URL] {
+        var found: [URL] = []
+        var seenPaths: Set<String> = []
+
+        for url in urls {
+            for fileURL in convertibleFiles(from: url, fileManager: fileManager) {
+                let path = fileURL.standardizedFileURL.path
+                guard !seenPaths.contains(path) else {
+                    continue
+                }
+
+                found.append(fileURL)
+                seenPaths.insert(path)
+            }
+        }
+
+        return found.sorted {
+            $0.path.localizedCaseInsensitiveCompare($1.path) == .orderedAscending
+        }
+    }
+
     public func makeDestinationURL(
         for sourceURL: URL,
         outputDirectory: URL? = nil,
@@ -121,6 +148,7 @@ public struct WebPConverter {
             throw WebPConverterError.unsupportedFileType(sourceURL)
         }
 
+        let originalFileSize = fileSize(at: sourceURL, fileManager: fileManager)
         let destinationURL = makeDestinationURL(
             for: sourceURL,
             outputDirectory: outputDirectory,
@@ -137,11 +165,21 @@ public struct WebPConverter {
             throw WebPConverterError.processExecutionFailed(sourceURL, message: output)
         }
 
+        let convertedFileSize = fileSize(at: destinationURL, fileManager: fileManager)
+
+        if options.deleteOriginalFile {
+            do {
+                try fileManager.removeItem(at: sourceURL)
+            } catch {
+                throw WebPConverterError.sourceDeletionFailed(sourceURL, message: error.localizedDescription)
+            }
+        }
+
         return ConversionSuccess(
             sourceURL: sourceURL,
             destinationURL: destinationURL,
-            originalFileSize: fileSize(at: sourceURL, fileManager: fileManager),
-            convertedFileSize: fileSize(at: destinationURL, fileManager: fileManager)
+            originalFileSize: originalFileSize,
+            convertedFileSize: convertedFileSize
         )
     }
 
@@ -183,6 +221,35 @@ public struct WebPConverter {
         }
 
         return rawSize.int64Value
+    }
+
+    private func convertibleFiles(from url: URL, fileManager: FileManager) -> [URL] {
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
+            return []
+        }
+
+        if !isDirectory.boolValue {
+            return canConvert(url) ? [url] : []
+        }
+
+        guard let enumerator = fileManager.enumerator(
+            at: url,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+
+        return enumerator.compactMap { item in
+            guard let fileURL = item as? URL,
+                  canConvert(fileURL),
+                  ((try? fileURL.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) ?? false) else {
+                return nil
+            }
+
+            return fileURL
+        }
     }
 
     private func resolveFromPath() -> URL? {
