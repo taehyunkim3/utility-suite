@@ -58,6 +58,8 @@ struct FileRenameView: View {
                     viewModel.clearCompleted()
                 }
                 .disabled(!viewModel.hasCompletedItems || viewModel.isProcessing)
+                Toggle("완료 후 목록 지우기", isOn: $viewModel.clearCompletedItemsAfterProcessing)
+                    .disabled(viewModel.isProcessing)
                 Spacer()
                 Button {
                     Task {

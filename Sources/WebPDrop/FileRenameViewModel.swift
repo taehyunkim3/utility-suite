@@ -62,6 +62,7 @@ final class FileRenameViewModel: ObservableObject {
     @Published var customOutputFolder: URL? {
         didSet { refreshActionState() }
     }
+    @Published var clearCompletedItemsAfterProcessing = false
     @Published var isDropTargeted = false
     @Published var isProcessing = false {
         didSet { refreshActionState() }
@@ -293,6 +294,8 @@ final class FileRenameViewModel: ObservableObject {
         } else {
             progressMessage = "일부 파일 처리에 실패했습니다."
         }
+
+        removeCompletedItemsIfNeeded(completedPaths)
     }
 
     func isCompleted(_ item: Item) -> Bool {
@@ -329,5 +332,18 @@ final class FileRenameViewModel: ObservableObject {
         var isDirectory: ObjCBool = false
         return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
             && !isDirectory.boolValue
+    }
+
+    private func removeCompletedItemsIfNeeded(_ completedPaths: Set<String>) {
+        guard clearCompletedItemsAfterProcessing, !completedPaths.isEmpty else {
+            return
+        }
+
+        items.removeAll { completedPaths.contains($0.url.path) }
+        for path in completedPaths {
+            completedSourcePaths.remove(path)
+            failedReasonsBySourcePath.removeValue(forKey: path)
+        }
+        progressMessage += " 완료된 항목은 목록에서 제거했습니다."
     }
 }

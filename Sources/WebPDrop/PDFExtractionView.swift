@@ -108,6 +108,8 @@ struct PDFExtractionView: View {
                     viewModel.clearCompleted()
                 }
                 .disabled(!viewModel.hasCompletedItems || viewModel.isExtracting)
+                Toggle("완료 후 목록 지우기", isOn: $viewModel.clearCompletedItemsAfterExtraction)
+                    .disabled(viewModel.isExtracting)
                 Spacer()
                 Button {
                     Task {

@@ -39,6 +39,7 @@ final class ConversionViewModel: ObservableObject {
         didSet { refreshActionState() }
     }
     @Published var deleteOriginalFiles = false
+    @Published var clearCompletedItemsAfterConversion = false
     @Published var isDropTargeted = false
     @Published var isConverting = false {
         didSet { refreshActionState() }
@@ -229,6 +230,8 @@ final class ConversionViewModel: ObservableObject {
         } else {
             progressMessage = "일부 파일은 변환에 실패했습니다."
         }
+
+        removeCompletedItemsIfNeeded(completedPaths)
     }
 
     func isCompleted(_ item: Item) -> Bool {
@@ -251,5 +254,18 @@ final class ConversionViewModel: ObservableObject {
         canConvert = !items.isEmpty
             && !isConverting
             && (destinationMode == .sameFolder || customOutputFolder != nil)
+    }
+
+    private func removeCompletedItemsIfNeeded(_ completedPaths: Set<String>) {
+        guard clearCompletedItemsAfterConversion, !completedPaths.isEmpty else {
+            return
+        }
+
+        items.removeAll { completedPaths.contains($0.url.path) }
+        for path in completedPaths {
+            completedSourcePaths.remove(path)
+            failedReasonsBySourcePath.removeValue(forKey: path)
+        }
+        progressMessage += " 완료된 항목은 목록에서 제거했습니다."
     }
 }
