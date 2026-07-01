@@ -84,6 +84,7 @@ struct AudioExtractionView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .labelsHidden()
 
                     if viewModel.destinationMode == .customFolder {
                         HStack {

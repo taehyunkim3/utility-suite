@@ -44,6 +44,7 @@ struct PDFExtractionView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .labelsHidden()
                     .frame(maxWidth: 220)
 
                     HStack(spacing: 8) {
@@ -84,6 +85,7 @@ struct PDFExtractionView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .labelsHidden()
 
                     if viewModel.destinationMode == .customFolder {
                         HStack {

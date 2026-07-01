@@ -113,6 +113,7 @@ struct FileRenameView: View {
                 Text("파일명 뒤").tag(FileRenameSequencePlacement.afterName)
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
             .disabled(!viewModel.includeSequence)
 
             Stepper("시작 번호 \(viewModel.sequenceStart)", value: $viewModel.sequenceStart, in: 0...999_999)
@@ -137,6 +138,7 @@ struct FileRenameView: View {
                 Text("원본 이름 변경").tag(FileRenameOperation.renameOriginal)
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
 
             Picker("출력 위치", selection: $viewModel.destinationMode) {
                 ForEach(FileRenameViewModel.DestinationMode.allCases) { mode in
@@ -144,6 +146,7 @@ struct FileRenameView: View {
                 }
             }
             .pickerStyle(.segmented)
+            .labelsHidden()
             .disabled(viewModel.operation == .renameOriginal)
 
             if viewModel.operation == .createCopy && viewModel.destinationMode == .customFolder {

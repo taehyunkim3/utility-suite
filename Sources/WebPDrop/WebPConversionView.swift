@@ -65,6 +65,7 @@ struct WebPConversionView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .labelsHidden()
 
                     if viewModel.destinationMode == .customFolder {
                         HStack {
