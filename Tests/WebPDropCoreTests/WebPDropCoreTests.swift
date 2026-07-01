@@ -123,6 +123,32 @@ import UniformTypeIdentifiers
     #expect(flac.ffmpegAudioArguments() == ["-c:a", "flac"])
 }
 
+@Test func videoOptimizerRecognizesSupportedTypes() {
+    let optimizer = VideoOptimizer()
+    #expect(optimizer.canOptimize(URL(fileURLWithPath: "/tmp/landing.mp4")))
+    #expect(optimizer.canOptimize(URL(fileURLWithPath: "/tmp/hero.MOV")))
+    #expect(optimizer.canOptimize(URL(fileURLWithPath: "/tmp/source.webm")))
+    #expect(!optimizer.canOptimize(URL(fileURLWithPath: "/tmp/poster.webp")))
+}
+
+@Test func videoPresetDefaultsMatchLandingTargets() {
+    #expect(VideoOptimizationPreset.landingDesktop.defaultWidth == 1920)
+    #expect(VideoOptimizationPreset.landingDesktop.defaultFPS == 30)
+    #expect(VideoOptimizationPreset.landingDesktop.suggestedTargetMegabytes == 12)
+    #expect(VideoOptimizationPreset.landingDesktop.outputSuffix == "pc")
+
+    #expect(VideoOptimizationPreset.landingMobile.defaultWidth == 1280)
+    #expect(VideoOptimizationPreset.landingMobile.defaultFPS == 30)
+    #expect(VideoOptimizationPreset.landingMobile.suggestedTargetMegabytes == 5)
+    #expect(VideoOptimizationPreset.landingMobile.outputSuffix == "mobile")
+}
+
+@Test func videoQualityMapsToExpectedCRF() {
+    #expect(VideoQualityLevel.low.crf(for: .h264) > VideoQualityLevel.high.crf(for: .h264))
+    #expect(VideoQualityLevel.low.crf(for: .hevc) > VideoQualityLevel.high.crf(for: .hevc))
+    #expect(VideoQualityLevel.maximum.crf(for: .h264) < VideoQualityLevel.high.crf(for: .h264))
+}
+
 @Test func pdfDestinationURLPadsPageNumber() throws {
     let extractor = PDFImageExtractor()
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

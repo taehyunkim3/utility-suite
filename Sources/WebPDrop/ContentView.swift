@@ -5,10 +5,12 @@ struct ContentView: View {
     @StateObject private var audioViewModel = AudioExtractionViewModel()
     @StateObject private var pdfViewModel = PDFExtractionViewModel()
     @StateObject private var fileRenameViewModel = FileRenameViewModel()
+    @StateObject private var videoViewModel = VideoOptimizationViewModel()
     @State private var selectedTab: Tab = .webp
 
     enum Tab: Hashable {
         case webp
+        case video
         case audio
         case pdf
         case rename
@@ -21,6 +23,12 @@ struct ContentView: View {
                     Label("WebP 변환", systemImage: "photo")
                 }
                 .tag(Tab.webp)
+
+            VideoOptimizationView(viewModel: videoViewModel)
+                .tabItem {
+                    Label("영상 최적화", systemImage: "film")
+                }
+                .tag(Tab.video)
 
             AudioExtractionView(viewModel: audioViewModel)
                 .tabItem {
