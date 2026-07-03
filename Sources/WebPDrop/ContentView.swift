@@ -49,7 +49,7 @@ struct ContentView: View {
                 .tag(Tab.rename)
         }
         .padding(20)
-        .frame(minWidth: 860, minHeight: 780)
+        .frame(minWidth: 1120, idealWidth: 1180, minHeight: 820, idealHeight: 900)
         .background(Color(nsColor: .windowBackgroundColor))
     }
 }

@@ -1,4 +1,3 @@
-import AVKit
 import SwiftUI
 import WebPDropCore
 
@@ -6,21 +5,25 @@ struct VideoOptimizationView: View {
     @ObservedObject var viewModel: VideoOptimizationViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            header
-            MediaDropZone(
-                isTargeted: $viewModel.isDropTargeted,
-                iconName: "film.stack",
-                title: "MP4/MOV 영상을 여기로 드래그하거나 클릭하세요",
-                subtitle: "영상 분석 후 랜딩 PC/모바일용 MP4와 poster.webp를 출력합니다.",
-                onTap: { viewModel.chooseFiles() },
-                onDropURLs: { viewModel.addFiles(urls: $0) }
-            )
-            controls
-            content
-            footer
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: 18) {
+                header
+                MediaDropZone(
+                    isTargeted: $viewModel.isDropTargeted,
+                    iconName: "film.stack",
+                    title: "MP4/MOV 영상을 여기로 드래그하거나 클릭하세요",
+                    subtitle: "영상 분석 후 랜딩 PC/모바일용 MP4와 poster.webp를 출력합니다.",
+                    onTap: { viewModel.chooseFiles() },
+                    onDropURLs: { viewModel.addFiles(urls: $0) }
+                )
+                controls
+                progressConsole
+                content
+                footer
+            }
+            .padding(4)
         }
-        .padding(4)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var header: some View {
@@ -104,7 +107,7 @@ struct VideoOptimizationView: View {
 
                     Toggle("오디오 제거", isOn: $viewModel.removeAudio)
                     Toggle("faststart 적용", isOn: $viewModel.fastStart)
-                    Stepper("포스터 \(viewModel.posterTime, specifier: "%.1f")초", value: $viewModel.posterTime, in: 0...30, step: 0.5)
+                    Stepper("포스터 \(viewModel.posterTime, specifier: "%.1f")초", value: $viewModel.posterTime, in: 0...30, step: 0.1)
 
                     Picker("출력 위치", selection: $viewModel.destinationMode) {
                         ForEach(VideoOptimizationViewModel.DestinationMode.allCases) { mode in
@@ -298,11 +301,9 @@ struct VideoOptimizationView: View {
                 .frame(maxWidth: .infinity, minHeight: 220, alignment: .topLeading)
             }
 
-            if let previewURL = viewModel.selectedPreviewURL {
-                VideoPreview(url: previewURL)
-                    .frame(height: 180)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            }
+            Text("미리보기는 결과 행의 재생 버튼으로 기본 플레이어에서 확인합니다.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .frame(minWidth: 390)
     }
@@ -316,7 +317,7 @@ struct VideoOptimizationView: View {
                     .truncationMode(.middle)
                 Spacer()
                 Button("재생") {
-                    viewModel.selectedPreviewURL = success.destinationURL
+                    viewModel.open(success.destinationURL)
                 }
                 .buttonStyle(.borderless)
                 Button("열기") {
@@ -374,6 +375,49 @@ struct VideoOptimizationView: View {
         }
     }
 
+    private var progressConsole: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Label("진행 로그", systemImage: "terminal")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Text(viewModel.isOptimizing || viewModel.isAnalyzing ? "실행 중" : "대기")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(viewModel.isOptimizing || viewModel.isAnalyzing ? .green : .secondary)
+            }
+
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 4) {
+                        ForEach(Array(viewModel.progressLogLines.enumerated()), id: \.offset) { index, line in
+                            Text(line)
+                                .font(.system(size: 11, weight: .regular, design: .monospaced))
+                                .foregroundStyle(Color(nsColor: .systemGreen))
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .id(index)
+                        }
+                    }
+                    .padding(10)
+                }
+                .frame(height: 118)
+                .background(Color.black.opacity(0.86))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(Color(nsColor: .systemGreen).opacity(0.24))
+                }
+                .onChange(of: viewModel.progressLogLines.count) { count in
+                    guard count > 0 else {
+                        return
+                    }
+
+                    proxy.scrollTo(count - 1, anchor: .bottom)
+                }
+            }
+        }
+    }
+
     private func metadataSummary(_ metadata: VideoMetadata) -> String {
         let duration = metadata.duration.map { "\(Int($0.rounded()))초" } ?? "-"
         let codec = metadata.codecName?.uppercased() ?? "-"
@@ -423,23 +467,5 @@ struct VideoOptimizationView: View {
 
         let ratio = max(0, 1 - (Double(optimized) / Double(original)))
         return "\(ratio.formatted(.percent.precision(.fractionLength(0))))"
-    }
-}
-
-private struct VideoPreview: View {
-    let url: URL
-    @State private var player: AVPlayer?
-
-    var body: some View {
-        VideoPlayer(player: player)
-            .onAppear {
-                player = AVPlayer(url: url)
-            }
-            .onChange(of: url) { newURL in
-                player = AVPlayer(url: newURL)
-            }
-            .onDisappear {
-                player?.pause()
-            }
     }
 }

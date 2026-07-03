@@ -2,9 +2,26 @@ import AppKit
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let minimumWindowSize = NSSize(width: 1120, height: 860)
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+
+        DispatchQueue.main.async { [minimumWindowSize] in
+            for window in NSApp.windows {
+                window.minSize = minimumWindowSize
+
+                if window.frame.width < minimumWindowSize.width || window.frame.height < minimumWindowSize.height {
+                    let width = max(window.frame.width, minimumWindowSize.width)
+                    let height = max(window.frame.height, minimumWindowSize.height)
+                    var frame = window.frame
+                    frame.origin.y -= height - frame.height
+                    frame.size = NSSize(width: width, height: height)
+                    window.setFrame(frame, display: true)
+                }
+            }
+        }
     }
 }
 
@@ -23,6 +40,7 @@ struct WebPDropApp: App {
                 }
             }
         }
+        .defaultSize(width: 1180, height: 900)
         .windowResizability(.contentSize)
     }
 

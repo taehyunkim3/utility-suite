@@ -78,6 +78,7 @@ public struct VideoOptimizationReport: Sendable, Equatable {
 public enum VideoOptimizerError: LocalizedError, Equatable {
     case ffmpegUnavailable
     case ffprobeUnavailable
+    case webpEncoderUnavailable
     case unsupportedFileType(URL)
     case metadataReadFailed(URL, message: String)
     case processExecutionFailed(URL, message: String)
@@ -88,6 +89,8 @@ public enum VideoOptimizerError: LocalizedError, Equatable {
             return "ffmpeg를 찾지 못했습니다. Homebrew로 설치하세요: brew install ffmpeg"
         case .ffprobeUnavailable:
             return "ffprobe를 찾지 못했습니다. Homebrew로 설치하세요: brew install ffmpeg"
+        case .webpEncoderUnavailable:
+            return "WebP 인코더를 찾지 못했습니다. 앱 번들 또는 Homebrew webp 설치를 확인하세요."
         case .unsupportedFileType(let url):
             return "지원하지 않는 영상 형식입니다: \(url.lastPathComponent)"
         case let .metadataReadFailed(url, message):
@@ -244,6 +247,10 @@ public struct VideoOptimizer {
             throw VideoOptimizerError.ffmpegUnavailable
         }
 
+        guard let webpEncoderURL = WebPConverter().encoderURL else {
+            throw VideoOptimizerError.webpEncoderUnavailable
+        }
+
         guard canOptimize(sourceURL) else {
             throw VideoOptimizerError.unsupportedFileType(sourceURL)
         }
@@ -255,7 +262,19 @@ public struct VideoOptimizer {
             outputDirectory: outputDirectory,
             uniquingIn: fileManager
         )
-        let output = try runProcessText(
+
+        let temporaryDirectory = fileManager.temporaryDirectory
+            .appendingPathComponent("webpdrop-poster-\(UUID().uuidString)", isDirectory: true)
+        try fileManager.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+        defer {
+            try? fileManager.removeItem(at: temporaryDirectory)
+        }
+
+        let frameURL = temporaryDirectory
+            .appendingPathComponent(destinationURL.deletingPathExtension().lastPathComponent)
+            .appendingPathExtension("png")
+
+        let ffmpegOutput = try runProcessText(
             executableURL: ffmpegURL,
             arguments: [
                 "-hide_banner",
@@ -264,23 +283,41 @@ public struct VideoOptimizer {
                 "-ss", String(format: "%.2f", time),
                 "-i", sourceURL.path,
                 "-frames:v", "1",
-                "-compression_level", "6",
-                "-quality", "82",
-                destinationURL.path,
+                frameURL.path,
+            ],
+            sourceURL: sourceURL,
+            failureMapper: { VideoOptimizerError.processExecutionFailed(sourceURL, message: $0) }
+        )
+
+        guard fileManager.fileExists(atPath: frameURL.path) else {
+            throw VideoOptimizerError.processExecutionFailed(sourceURL, message: ffmpegOutput)
+        }
+
+        let webpOutput = try runProcessText(
+            executableURL: webpEncoderURL,
+            arguments: [
+                "-quiet",
+                "-q", "82",
+                "-o", destinationURL.path,
+                frameURL.path,
             ],
             sourceURL: sourceURL,
             failureMapper: { VideoOptimizerError.processExecutionFailed(sourceURL, message: $0) }
         )
 
         guard fileManager.fileExists(atPath: destinationURL.path) else {
-            throw VideoOptimizerError.processExecutionFailed(sourceURL, message: output)
+            throw VideoOptimizerError.processExecutionFailed(sourceURL, message: webpOutput)
         }
+
+        let log = [ffmpegOutput, webpOutput]
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
 
         return PosterExtractionSuccess(
             sourceURL: sourceURL,
             destinationURL: destinationURL,
             fileSize: fileSize(at: destinationURL, fileManager: fileManager),
-            log: output
+            log: log
         )
     }
 
